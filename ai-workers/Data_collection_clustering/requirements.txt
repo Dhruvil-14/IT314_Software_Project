@@ -1,0 +1,14 @@
+# Project dependencies for Disaster Coordination Hub
+# ---------------------------------------------------
+# HTTP requests
+requests>=2.32.0
+
+# HTML parsing (Telegram collector)
+beautifulsoup4>=4.12.3
+
+# Optional XML parsing (Reddit RSS)
+# built-in xml.etree works, but lxml improves speed (install if needed)
+lxml>=5.2.2
+
+# Pin Python version (project targets Python 3.14)
+# python_version >= "3.14"
