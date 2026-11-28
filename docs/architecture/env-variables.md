@@ -31,6 +31,8 @@ When `APP_ENV` is `staging` or `production` the backend refuses to start unless 
 | `DISASTER_CLASSIFIER_URL` | no | - | Optional multilingual classifier URL for newly ingested `GNEWS`/`BLUESKY` signals. Set the real URL only in the local `.env` and the deployed service's environment, never in committed files. The service exposes `POST /predict`, accepts `{"text":"..."}`, and requires no token. If unset, ingestion retains the existing `AI_TRIAGE_URL` prelabel path. |
 | `AI_LOW_CONFIDENCE_THRESHOLD` | no | `0.6` | Below this a suggestion is `LOW_CONFIDENCE`. |
 | `AI_IMAGE_SERVICE_URL` | no | - | Base URL of the disaster image classifier (`models/image_classifier/deployment`, `POST /predict`; the hosted copy is described in `docs/ai/models.md`), for example `http://localhost:8002` when started from that folder with `uvicorn app:app --port 8002` (it must not point at the backend's own port 8000). Unset = photo analysis returns `AI_PHOTO_UNAVAILABLE` (503). |
+| `CLASSIFIER_MODE` | no | `off` | Controls the multi-modal classification pipeline (`off`, `shadow`, or `live`). |
+| `CLASSIFIER_SWEEP_TOKEN` (S) | no | - | Secret token required to trigger the internal stale classification recovery sweep (`POST /api/v1/internal/classification/sweep`). |
 | `GOOGLE_MAPS_API_KEY` (S) | no | - | Optional geocoder; falls back to OpenStreetMap Nominatim. |
 | `BOUNDARY_SYNC_ENABLED` | no | `true` | Enable the periodic boundary sync worker. |
 | `BOUNDARY_SYNC_INTERVAL_HOURS` | no | `720` | Minimum hours between upstream syncs. |
