@@ -1,0 +1,50 @@
+name: Classification Sweep Trigger
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: classification-sweep
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  trigger:
+    name: Wake Backend & Trigger Classification Sweep
+    runs-on: ubuntu-latest
+    environment: staging
+    timeout-minutes: 15
+    steps:
+      - name: Wake backend, then trigger classification sweep
+        env:
+          BASE: ${{ secrets.STAGING_BACKEND_URL }}
+          TOKEN: ${{ secrets.CLASSIFIER_SWEEP_TOKEN }}
+        run: |
+          if [ -z "$BASE" ] || [ -z "$TOKEN" ]; then
+            echo '::warning::staging secrets STAGING_BACKEND_URL or CLASSIFIER_SWEEP_TOKEN missing';
+            exit 0;
+          fi
+
+          echo "Waking backend at $BASE..."
+          for i in 1 2 3 4 5 6 7 8 9; do
+            if curl -fsS --max-time 20 "$BASE/api/v1/health" > /dev/null; then
+              echo "Backend is awake."
+              break
+            fi
+            echo "Waiting for backend spin-up ($i/9)..."
+            sleep 10
+          done
+
+          echo "Triggering /api/v1/internal/classification/sweep..."
+          code=$(curl -s -o out.json -w '%{http_code}' --max-time 300 \
+            -X POST \
+            -H "Authorization: Bearer $TOKEN" \
+            -H "Content-Type: application/json" \
+            "$BASE/api/v1/internal/classification/sweep" || echo "000")
+
+          echo "HTTP $code" >> $GITHUB_STEP_SUMMARY
+          cat out.json || true

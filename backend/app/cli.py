@@ -409,6 +409,24 @@ def load_fallback_alerts(args) -> None:
     print("Loaded 3 fallback alerts (is_fallback=TRUE)")
 
 
+def classify_pending(args: argparse.Namespace) -> None:
+    from app.services.classification.worker import run_classification, sweep_stale_classifications
+
+    limit = getattr(args, "limit", 50)
+    print("Sweeping stale running classifications...")
+    swept = sweep_stale_classifications()
+    print(f"Swept {swept} stale rows.")
+
+    processed = 0
+    while processed < limit:
+        res = run_classification()
+        if not res or res.get("status") == "RETRY_SCHEDULED":
+            break
+        processed += 1
+        print(f"[{processed}] Processed classification {res.get('classification_id')}: status={res.get('status')} label={res.get('final_label')}")
+    print(f"Completed {processed} pending classifications.")
+
+
 def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(prog="python -m app.cli")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -455,6 +473,10 @@ def main(argv: list[str] | None = None) -> None:
 
     fb_alerts = sub.add_parser("load-fallback-alerts", help="Load 3 sample alerts with is_fallback=TRUE (dev only)")
     fb_alerts.set_defaults(func=load_fallback_alerts)
+
+    classify_cmd = sub.add_parser("classify-pending", help="Run pending incident classifications and sweep stale jobs")
+    classify_cmd.add_argument("--limit", type=int, default=50, help="Maximum number of jobs to process")
+    classify_cmd.set_defaults(func=classify_pending)
 
     args = parser.parse_args(argv)
     args.func(args)

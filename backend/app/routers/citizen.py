@@ -7,10 +7,11 @@ citizen's incident is reported as 404 so its existence is never revealed.
 
 import hashlib
 import json
+import logging
 import uuid
 from typing import Annotated, Literal
 
-from fastapi import APIRouter, Header, Request
+from fastapi import APIRouter, BackgroundTasks, Header, Request
 from fastapi.concurrency import run_in_threadpool
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse, Response
@@ -25,7 +26,10 @@ from app.geo import district_for, is_in_gujarat
 from app.ratelimit import rate_limit
 from app.routers.auth import _PHONE_RE
 from app.routers.auth import _check_password_policy as check_password_policy
+from app.services.classification.worker import queue_classification, run_classification
 from app.uploads import read_capped_body, safe_filename, sniff_image_type, strip_image_metadata
+
+logger = logging.getLogger("drch.citizen")
 
 router = APIRouter(prefix="/api/v1", tags=["citizen"])
 
@@ -113,6 +117,7 @@ def _created_body(row: dict) -> dict:
 def create_incident(
     body: IncidentCreate,
     principal: Citizen,
+    background_tasks: BackgroundTasks,
     idempotency_key: Annotated[str | None, Header(alias="Idempotency-Key", max_length=100)] = None,
 ):
     # Required (docs/architecture/api_contracts.md s.2.3): without a key, every client retry of the same
@@ -188,6 +193,10 @@ def create_incident(
             rationale=f"{row['incident_ref']} submitted by citizen",
             ip=principal.ip,
         )
+        try:
+            queue_classification(conn, row["incident_id"], trigger_event="SUBMITTED")
+        except Exception:
+            logger.exception("Failed to queue classification for incident %s", row["incident_id"])
         notify(
             conn,
             user_id=principal.user_id,
@@ -196,7 +205,12 @@ def create_incident(
             body="Your report was received and is waiting for verification by the response team.",
             related_id=row["incident_id"],
         )
-        return _created_body(row)
+
+    try:
+        background_tasks.add_task(run_classification, row["incident_id"])
+    except Exception:
+        logger.exception("Failed to schedule classification background task for incident %s", row["incident_id"])
+    return _created_body(row)
 
 
 _MY_COLUMNS = """
@@ -264,7 +278,12 @@ def my_incident(incident_id: uuid.UUID, principal: Citizen):
     status_code=201,
     dependencies=[rate_limit("information-response", 20, 3600)],
 )
-def reply_to_information_request(incident_id: uuid.UUID, body: InformationReply, principal: Citizen):
+def reply_to_information_request(
+    incident_id: uuid.UUID,
+    body: InformationReply,
+    principal: Citizen,
+    background_tasks: BackgroundTasks,
+):
     """The reporter answers a DM information request (own incident, NEEDS_INFORMATION only).
 
     Stores the text and/or a corrected Gujarat location, returns the incident to SUBMITTED for
@@ -325,6 +344,16 @@ def reply_to_information_request(incident_id: uuid.UUID, body: InformationReply,
             after={"status": "SUBMITTED"},
             ip=principal.ip,
         )
+        try:
+            queue_classification(conn, incident_id, trigger_event="INFO_REPLY")
+        except Exception:
+            logger.exception("Failed to queue classification on info reply for incident %s", incident_id)
+
+    try:
+        background_tasks.add_task(run_classification, incident_id)
+    except Exception:
+        logger.exception("Failed to schedule classification background task on info reply for incident %s", incident_id)
+
     return {"incident_id": incident_id, "status": "SUBMITTED", "status_label": STATUS_LABELS["SUBMITTED"]}
 
 
@@ -411,6 +440,10 @@ def _store_attachment(principal, incident_id: uuid.UUID, filename: str, mime: st
             after={"incident_id": str(incident_id), "mime_type": mime, "size_bytes": len(content)},
             ip=principal.ip,
         )
+        try:
+            queue_classification(conn, incident_id, trigger_event="PHOTO_ADDED")
+        except Exception:
+            logger.exception("Failed to queue classification on photo upload for incident %s", incident_id)
         return _attachment_body(row), True
 
 
@@ -419,7 +452,12 @@ def _store_attachment(principal, incident_id: uuid.UUID, filename: str, mime: st
     status_code=201,
     dependencies=[rate_limit("attachment", 30, 3600)],
 )
-async def upload_attachment(incident_id: uuid.UUID, request: Request, principal: Citizen):
+async def upload_attachment(
+    incident_id: uuid.UUID,
+    request: Request,
+    principal: Citizen,
+    background_tasks: BackgroundTasks,
+):
     """Attach a JPEG, PNG or WebP photo (up to 5 MB, 5 per report) to your own open report.
 
     The photo is sent as the raw request body with its image content type and an optional
@@ -438,6 +476,11 @@ async def upload_attachment(incident_id: uuid.UUID, request: Request, principal:
     content = strip_image_metadata(content, mime)
     filename = safe_filename(request.headers.get("x-filename"))
     body, created = await run_in_threadpool(_store_attachment, principal, incident_id, filename, mime, content)
+    if created:
+        try:
+            background_tasks.add_task(run_classification, incident_id)
+        except Exception:
+            logger.exception("Failed to schedule classification on photo upload for incident %s", incident_id)
     return JSONResponse(status_code=201 if created else 200, content=jsonable_encoder(body))
 
 
