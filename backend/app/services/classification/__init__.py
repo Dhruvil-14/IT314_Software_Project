@@ -1,5 +1,13 @@
 """Report classification pipeline (fusion-v2)."""
 
+from app.services.classification.clients import (
+    ClassifierClientError,
+    ClassifierValidationError,
+    ImagePredictionResult,
+    TextPredictionResult,
+    classify_image,
+    classify_text,
+)
 from app.services.classification.fusion import (
     CONFIDENCE_HIGH_THRESHOLD,
     CONFIDENCE_MEDIUM_THRESHOLD,
@@ -28,6 +36,15 @@ from app.services.classification.review import (
     REVIEW_REASONS,
     evaluate_review_rules,
 )
+from app.services.classification.worker import (
+    MAX_ATTEMPTS,
+    RETRY_DELAYS_SECONDS,
+    SWEEP_TIMEOUT_MINUTES,
+    compute_input_hash,
+    queue_classification,
+    run_classification,
+    sweep_stale_classifications,
+)
 
 __all__ = [
     "CLASSES",
@@ -35,21 +52,34 @@ __all__ = [
     "CONFIDENCE_MEDIUM_THRESHOLD",
     "CONFLICT_MIN_PROBABILITY",
     "FINAL_LABELS",
+    "MAX_ATTEMPTS",
     "PIPELINE_VERSION",
+    "RETRY_DELAYS_SECONDS",
     "REVIEW_LOW_CONFIDENCE_THRESHOLD",
     "REVIEW_LOW_MARGIN_THRESHOLD",
     "REVIEW_REASONS",
+    "SWEEP_TIMEOUT_MINUTES",
     "WEIGHT_CITIZEN",
     "WEIGHT_IMAGE",
     "WEIGHT_TEXT",
+    "ClassifierClientError",
+    "ClassifierValidationError",
     "FusionResult",
+    "ImagePredictionResult",
+    "TextPredictionResult",
     "aggregate_photo_vectors",
     "build_citizen_vector",
+    "classify_image",
+    "classify_text",
     "collapse_image_probabilities",
     "collapse_text_probabilities",
+    "compute_input_hash",
     "evaluate_review_rules",
     "fuse_sources",
     "map_citizen_scenario",
     "map_final_label_to_lower_scenario",
     "map_final_label_to_scenario",
+    "queue_classification",
+    "run_classification",
+    "sweep_stale_classifications",
 ]

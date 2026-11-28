@@ -83,6 +83,9 @@ class Settings:
     bluesky_search_enabled: bool = False
     bluesky_search_url: str = ""
     disaster_classifier_url: str | None = None
+    ai_image_service_url: str | None = None
+    classifier_mode: str = "off"
+    classifier_sweep_token: str | None = None
     ingest_interval_seconds: int = 900
     ingestion_worker_enabled: bool = True
 
@@ -149,6 +152,9 @@ def get_settings() -> Settings:
         bluesky_search_enabled=_bool("BLUESKY_SEARCH_ENABLED", False),
         bluesky_search_url=os.getenv("BLUESKY_SEARCH_URL", "").strip(),
         disaster_classifier_url=os.getenv("DISASTER_CLASSIFIER_URL") or None,
+        ai_image_service_url=os.getenv("AI_IMAGE_SERVICE_URL") or None,
+        classifier_mode=os.getenv("CLASSIFIER_MODE", "off").strip().lower(),
+        classifier_sweep_token=os.getenv("CLASSIFIER_SWEEP_TOKEN") or None,
         ingest_interval_seconds=max(1, _int("INGEST_INTERVAL_SECONDS", 900)),
         # The local backend owns polling in development; staging/production use the
         # external scheduled trigger unless an operator explicitly enables this worker.
