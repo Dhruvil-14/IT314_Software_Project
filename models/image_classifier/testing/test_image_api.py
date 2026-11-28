@@ -13,7 +13,7 @@ Install:
 
 Example:
     python test_image_api.py ^
-      --api-url https://disaster-classifier-api.onrender.com ^
+      --api-url https://it314-software-project-dktp.onrender.com ^
       --tsv "D:\\Study\\Python\\Project\\New folder\\data_disaster_types\\data_disaster_types\\consolidated_disaster_types_test_final.tsv" ^
       --data-dir "D:\\Study\\Python\\Project\\New folder\\data_disaster_types\\data_disaster_types\\data"
 

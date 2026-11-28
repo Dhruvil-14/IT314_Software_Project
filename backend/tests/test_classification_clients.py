@@ -67,12 +67,12 @@ def test_classify_text_success_uses_full_url():
     with patch("httpx.post", return_value=mock_resp) as mock_post:
         res = classify_text(
             description="My phone is 9876543210 and water entering homes in Ellis Bridge",
-            endpoint_url="https://indicbert-disaster-api.onrender.com/predict",
+            endpoint_url="https://it314-software-project-text-classifier.onrender.com/predict",
         )
 
         assert mock_post.called
         call_url, call_kwargs = mock_post.call_args
-        assert call_url[0] == "https://indicbert-disaster-api.onrender.com/predict"
+        assert call_url[0] == "https://it314-software-project-text-classifier.onrender.com/predict"
         # Confirm PII was scrubbed: phone number replaced
         sent_text = call_kwargs["json"]["text"]
         assert "9876543210" not in sent_text
@@ -91,7 +91,7 @@ def test_classify_text_handles_non_200():
     with patch("httpx.post", return_value=mock_resp):
         res = classify_text(
             description="Flooding near riverfront",
-            endpoint_url="https://indicbert-disaster-api.onrender.com/predict",
+            endpoint_url="https://it314-software-project-text-classifier.onrender.com/predict",
         )
         assert res is None
 
@@ -100,7 +100,7 @@ def test_classify_text_handles_timeout():
     with patch("httpx.post", side_effect=httpx.ConnectTimeout("Connection timed out")):
         res = classify_text(
             description="Flooding near riverfront",
-            endpoint_url="https://indicbert-disaster-api.onrender.com/predict",
+            endpoint_url="https://it314-software-project-text-classifier.onrender.com/predict",
         )
         assert res is None
 
@@ -111,7 +111,7 @@ def test_classify_text_handles_bad_probabilities():
     with patch("httpx.post", return_value=mock_resp):
         res = classify_text(
             description="Flooding near riverfront",
-            endpoint_url="https://indicbert-disaster-api.onrender.com/predict",
+            endpoint_url="https://it314-software-project-text-classifier.onrender.com/predict",
         )
         assert res is None
 
@@ -150,13 +150,13 @@ def test_classify_image_success_appends_predict():
             filename="scene.jpg",
             content_type="image/jpeg",
             evidence_id="123e4567-e89b-12d3-a456-426614174000",
-            base_url="https://disaster-classifier-api.onrender.com",
+            base_url="https://it314-software-project-dktp.onrender.com",
         )
 
         assert mock_post.called
         call_url, call_kwargs = mock_post.call_args
         # Confirms /predict was appended to base URL
-        assert call_url[0] == "https://disaster-classifier-api.onrender.com/predict"
+        assert call_url[0] == "https://it314-software-project-dktp.onrender.com/predict"
         assert "files" in call_kwargs
 
         assert res is not None
@@ -174,7 +174,7 @@ def test_classify_image_handles_non_200():
     with patch("httpx.post", return_value=mock_resp):
         res = classify_image(
             image_bytes=b"bytes",
-            base_url="https://disaster-classifier-api.onrender.com",
+            base_url="https://it314-software-project-dktp.onrender.com",
         )
         assert res is None
 
@@ -183,7 +183,7 @@ def test_classify_image_handles_timeout():
     with patch("httpx.post", side_effect=httpx.ReadTimeout("Read timed out")):
         res = classify_image(
             image_bytes=b"bytes",
-            base_url="https://disaster-classifier-api.onrender.com",
+            base_url="https://it314-software-project-dktp.onrender.com",
         )
         assert res is None
 
@@ -193,7 +193,7 @@ def test_classify_image_handles_malformed_probabilities():
     with patch("httpx.post", return_value=mock_resp):
         res = classify_image(
             image_bytes=b"bytes",
-            base_url="https://disaster-classifier-api.onrender.com",
+            base_url="https://it314-software-project-dktp.onrender.com",
         )
         assert res is None
 

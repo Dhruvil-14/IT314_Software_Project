@@ -95,6 +95,9 @@ def classify_text(
         logger.debug("Text classifier URL not configured; skipping text classification")
         return None
 
+    if not url.rstrip("/").endswith("/predict"):
+        url = f"{url.rstrip('/')}/predict"
+
     # Scrub PII strictly before transmission
     scrubbed = str(scrub_pii(description)).strip()
     if not scrubbed:
@@ -175,7 +178,8 @@ def classify_image(
         logger.debug("Image classifier base URL not configured; skipping image classification")
         return None
 
-    predict_url = f"{configured_base.rstrip('/')}/predict"
+    clean_base = configured_base.rstrip("/")
+    predict_url = clean_base if clean_base.endswith("/predict") else f"{clean_base}/predict"
 
     try:
         files = {"file": (filename, image_bytes, content_type)}

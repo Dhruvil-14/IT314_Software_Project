@@ -3,7 +3,7 @@
 Test the deployed IndicBERT Disaster Classification API against tweets_multilingual.csv.
 
 Default API:
-    https://indicbert-disaster-api.onrender.com
+    https://it314-software-project-text-classifier.onrender.com
 
 Example:
     python test_text_api.py --csv ../data/tweets_multilingual.csv
@@ -36,7 +36,7 @@ from sklearn.metrics import (
 
 
 LABELS = ["Fire", "Earthquake", "Cyclone", "Flood", "Non-Disaster"]
-DEFAULT_API_URL = "https://indicbert-disaster-api.onrender.com"
+DEFAULT_API_URL = "https://it314-software-project-text-classifier.onrender.com"
 
 
 def normalize_label(value: Any) -> str:

@@ -12,8 +12,8 @@ This document covers the whole path: data, training, export, deployment and test
 
 | Service | URL | Model files on Hugging Face |
 |---|---|---|
-| Text API | https://indicbert-disaster-api.onrender.com | `Dhruvil-14/indicbert-disaster-api` |
-| Image API | https://disaster-classifier-api.onrender.com | `Dhruvil-14/disaster-classifier` |
+| Text API | https://it314-software-project-text-classifier.onrender.com | `Dhruvil-14/indicbert-disaster-api` |
+| Image API | https://it314-software-project-dktp.onrender.com | `Dhruvil-14/disaster-classifier` |
 
 Both run on Render's free tier, so the first request after idle time can take a
 while while the service wakes up and downloads its model. Docs are at `/docs`, health at `/health`.
@@ -194,7 +194,7 @@ deployed service.
 ```bash
 cd text_classifier/testing
 pip install -r requirements.txt
-python test_text_api.py --api-url https://indicbert-disaster-api.onrender.com   # --limit 20 for a quick try
+python test_text_api.py --api-url https://it314-software-project-text-classifier.onrender.com   # --limit 20 for a quick try
 ```
 
 Defaults: `--csv ../data/tweets_multilingual.csv`, output to `docs/ai/reports/text_classifier/`. The script waits for a sleeping
@@ -304,7 +304,7 @@ Notes from the saved evaluation run are in [`docs/ai/image-classifier-model-chec
 ```javascript
 const form = new FormData();
 form.append("file", imageFile);   // field name must be "file"
-const res = await fetch("https://disaster-classifier-api.onrender.com/predict", { method: "POST", body: form });
+const res = await fetch("https://it314-software-project-dktp.onrender.com/predict", { method: "POST", body: form });
 const result = await res.json();
 ```
 
@@ -316,7 +316,7 @@ Example response (shortened):
 ```bash
 cd image_classifier/testing
 pip install -r requirements.txt
-python test_image_api.py --api-url https://disaster-classifier-api.onrender.com \
+python test_image_api.py --api-url https://it314-software-project-dktp.onrender.com \
     --tsv /path/to/data_disaster_types/consolidated_disaster_types_test_final.tsv \
     --data-dir /path/to/data_disaster_types/data --limit 20     # drop --limit for the full split
 ```
